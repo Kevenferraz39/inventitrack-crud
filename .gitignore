@@ -31,3 +31,15 @@ build/
 
 ### VS Code ###
 .vscode/
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+### Java ###
+*.class
+*.log
+### Spring Boot ###
+application-dev.properties
+application-prod.properties
+### Firebase Credentials (MUITO IMPORTANTE NÃO SUBIR PARA O GITHUB) ###
+firebase-service-account.json

@@ -1,0 +1,9 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Para desenvolvimento, permitindo leitura e escrita geral (CUIDADO EM PRODUÇÃO)
+    match /produtos/{produtoId} {
+      allow read, write: if true; 
+    }
+  }
+}

@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>InventiTrack — Administração</title>
+<link rel="stylesheet" href="styles.css" />
+<script src="tweaks.js"></script>
+<style>
+  .admin-shell {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    min-height: calc(100vh - 60px);
+  }
+  .side {
+    border-right: 1px solid var(--border);
+    background: var(--bg-elev);
+    padding: 24px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .side-eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 500;
+    padding: 14px 12px 6px;
+  }
+  .side-link {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 12px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    color: var(--text-2);
+    cursor: pointer;
+    border: 0;
+    background: transparent;
+    text-align: left;
+    transition: all 0.15s var(--ease);
+    width: 100%;
+    font-weight: 500;
+  }
+  .side-link:hover { background: var(--surface-2); color: var(--text); }
+  .side-link.active {
+    background: var(--accent-soft);
+    color: var(--accent);
+  }
+  .side-link .count {
+    margin-left: auto;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--muted);
+  }
+  .side-link.active .count { color: var(--accent); }
+
+  .main {
+    padding: 28px 32px;
+    overflow: auto;
+  }
+
+  .toolbar {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+  }
+  .toolbar .input { max-width: 320px; }
+  .toolbar .spacer { flex: 1; }
+
+  .data-table {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+  }
+  .data-table table { margin: 0; }
+
+  .stock-bar {
+    width: 80px; height: 4px;
+    background: var(--surface-2);
+    border-radius: 2px;
+    position: relative;
+    overflow: hidden;
+  }
+  .stock-bar .fill {
+    height: 100%;
+    background: var(--success);
+    border-radius: 2px;
+  }
+  .stock-bar.low .fill { background: var(--warn); }
+  .stock-bar.crit .fill { background: var(--danger); }
+
+  .row-actions { display: flex; gap: 4px; opacity: 0.6; }
+  tr:hover .row-actions { opacity: 1; }
+
+  /* Drawer modal */
+  .drawer {
+    position: fixed; top: 0; right: 0; bottom: 0;
+    width: min(520px, 100vw);
+    background: var(--bg-elev);
+    border-left: 1px solid var(--border);
+    box-shadow: var(--shadow-lg);
+    z-index: 100;
+    transform: translateX(100%);
+    transition: transform 0.25s var(--ease);
+    display: flex; flex-direction: column;
+  }
+  .drawer.open { transform: translateX(0); }
+  .drawer-bg {
+    position: fixed; inset: 0; background: rgba(14,16,18,0.4);
+    z-index: 99;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.2s var(--ease);
+  }
+  .drawer-bg.open { opacity: 1; pointer-events: auto; }
+  .drawer-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+  }
+  .drawer-head h2 { font-size: 18px; font-weight: 600; margin: 0; letter-spacing: -0.01em; }
+  .drawer-body { padding: 20px 24px; overflow-y: auto; flex: 1; }
+  .drawer-foot {
+    padding: 14px 24px; border-top: 1px solid var(--border);
+    display: flex; justify-content: flex-end; gap: 8px;
+  }
+  .form-row {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 12px; margin-bottom: 12px;
+  }
+  .form-row .full { grid-column: 1 / -1; }
+
+  /* Settings cards */
+  .settings-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  .settings-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+  }
+  .settings-card h3 {
+    font-size: 14px; font-weight: 600; margin: 0 0 4px;
+  }
+  .settings-card p { font-size: 12px; color: var(--muted); margin: 0 0 16px; }
+  .switch-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .switch-row:last-child { border-bottom: 0; }
+  .switch-row .lab { font-size: 13px; }
+  .switch-row .sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .toggle {
+    width: 32px; height: 18px;
+    background: var(--surface-2);
+    border-radius: 999px;
+    position: relative;
+    cursor: pointer;
+    transition: background 0.15s var(--ease);
+  }
+  .toggle::after {
+    content: "";
+    position: absolute; top: 2px; left: 2px;
+    width: 14px; height: 14px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform 0.15s var(--ease);
+  }
+  .toggle.on { background: var(--accent); }
+  .toggle.on::after { transform: translateX(14px); }
+
+  /* Reports */
+  .reports-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .report-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 18px;
+    cursor: pointer;
+    transition: all 0.15s var(--ease);
+  }
+  .report-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .report-card .ico {
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    display: grid; place-items: center;
+    margin-bottom: 12px;
+  }
+  .report-card h3 { font-size: 14px; font-weight: 600; margin: 0 0 4px; }
+  .report-card p { font-size: 12px; color: var(--muted); margin: 0; line-height: 1.5; }
+
+  .role-tag { padding: 2px 7px; border-radius: 4px; font-size: 11px; font-weight: 500; background: var(--surface-2); border: 1px solid var(--border); }
+
+  @media (max-width: 1100px) {
+    .admin-shell { grid-template-columns: 1fr; }
+    .side { display: none; }
+    .settings-grid, .reports-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div id="nav-mount"></div>
+
+<div class="admin-shell">
+
+  <!-- SIDEBAR -->
+  <aside class="side">
+    <span class="side-eyebrow">Cadastros</span>
+    <button class="side-link active" data-view="products">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+      Produtos
+      <span class="count" id="c-products">—</span>
+    </button>
+    <button class="side-link" data-view="users">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Usuários
+      <span class="count" id="c-users">—</span>
+    </button>
+    <button class="side-link" data-view="categories">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z"/></svg>
+      Categorias & Setores
+      <span class="count" id="c-cats">—</span>
+    </button>
+
+    <span class="side-eyebrow">Operações</span>
+    <button class="side-link" data-view="stock">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+      Entrada de Estoque
+    </button>
+    <button class="side-link" data-view="history">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9"/><path d="M3 4v8h8M12 7v5l3 3"/></svg>
+      Histórico Completo
+    </button>
+    <button class="side-link" data-view="reports">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+      Relatórios
+    </button>
+
+    <span class="side-eyebrow">Sistema</span>
+    <button class="side-link" data-view="settings">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      Configurações
+    </button>
+    <button class="side-link" data-view="permissions">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      Permissões
+    </button>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- VIEW: PRODUCTS -->
+    <section data-view="products" data-screen-label="Admin · Produtos">
+      <div class="page-header">
+        <div>
+          <span class="eyebrow">Cadastros</span>
+          <h1 class="page-title">Catálogo de produtos</h1>
+          <p class="page-subtitle">Gerencie todos os SKUs disponíveis para retirada.</p>
+        </div>
+        <button class="btn btn-primary" onclick="openProductDrawer()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+          Novo produto
+        </button>
+      </div>
+
+      <div class="toolbar">
+        <input class="input" placeholder="Buscar por nome, SKU, código..." id="prod-search" />
+        <select class="select" id="prod-cat" style="width:auto">
+          <option value="">Todas categorias</option>
+        </select>
+        <select class="select" id="prod-stock" style="width:auto">
+          <option value="">Todos estoques</option>
+          <option value="ok">Estoque OK</option>
+          <option value="low">Abaixo do mínimo</option>
+          <option value="crit">Crítico (≤2)</option>
+        </select>
+        <div class="spacer"></div>
+        <button class="btn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+          Exportar CSV
+        </button>
+      </div>
+
+      <div class="data-table">
+        <table class="table" id="prod-table">
+          <thead>
+            <tr>
+              <th>SKU</th>
+              <th>Produto</th>
+              <th>Categoria</th>
+              <th>Estoque</th>
+              <th>Mínimo</th>
+              <th>Localização</th>
+              <th>Custo</th>
+              <th>Última entrada</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- VIEW: USERS -->
+    <section data-view="users" data-screen-label="Admin · Usuários" style="display:none">
+      <div class="page-header">
+        <div>
+          <span class="eyebrow">Cadastros</span>
+          <h1 class="page-title">Usuários e crachás</h1>
+          <p class="page-subtitle">Funcionários autorizados a retirar equipamentos.</p>
+        </div>
+        <button class="btn btn-primary" onclick="alert('Cadastro de usuário (mock)')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+          Novo usuário
+        </button>
+      </div>
+      <div class="toolbar">
+        <input class="input" placeholder="Buscar por nome, crachá, função..." id="user-search" />
+        <div class="spacer"></div>
+      </div>
+      <div class="data-table">
+        <table class="table" id="user-table">
+          <thead>
+            <tr>
+              <th>Funcionário</th>
+              <th>Crachá</th>
+              <th>Função</th>
+              <th>Setor</th>
+              <th>Turno</th>
+              <th>Status</th>
+              <th>Retiradas</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- VIEW: CATEGORIES -->
+    <section data-view="categories" data-screen-label="Admin · Categorias" style="display:none">
+      <div class="page-header">
+        <div>
+          <span class="eyebrow">Cadastros</span>
+          <h1 class="page-title">Categorias & setores</h1>
+          <p class="page-subtitle">Organize seu catálogo e centros de custo.</p>
+        </div>
+      </div>
+
+      <div class="settings-grid">
+        <div class="settings-card">
+          <h3>Categorias de produtos</h3>
+          <p>Agrupamento usado em buscas e relatórios.</p>
+          <div id="cat-list"></div>
+          <button class="btn" style="margin-top: 14px">+ Nova categoria</button>
+        </div>
+        <div class="settings-card">
+          <h3>Setores / Centros de custo</h3>
+          <p>Departamentos que retiram equipamentos.</p>
+          <div id="sec-list"></div>
+          <button class="btn" style="margin-top: 14px">+ Novo setor</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW: STOCK -->
+    <section data-view="stock" data-screen-label="Admin · Estoque" style="display:none">
+      <div class="page-header">
+        <div>
+          <span class="eyebrow">Operações</span>
+          <h1 class="page-title">Entrada de estoque</h1>
+          <p class="page-subtitle">Registre notas de entrada e ajustes de inventário.</p>
+        </div>
+        <button class="btn btn-primary">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+          Nova entrada
+        </button>
+      </div>
+
+      <div class="data-table">
+        <table class="table">
+          <thead>
+            <tr><th>Nº NF</th><th>Fornecedor</th><th>Itens</th><th>Total</th><th>Data</th><th>Status</th><th></th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="mono">NF-2026-00482</td><td>Bosch do Brasil</td><td>3 SKUs · 12 un.</td><td class="num">R$ 5.868,00</td><td class="mono muted">02/05/2026</td><td><span class="st st-devolvido">Conferido</span></td><td><button class="btn btn-ghost btn-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button></td></tr>
+            <tr><td class="mono">NF-2026-00478</td><td>3M Brasil EPI</td><td>5 SKUs · 240 un.</td><td class="num">R$ 8.420,00</td><td class="mono muted">28/04/2026</td><td><span class="st st-devolvido">Conferido</span></td><td><button class="btn btn-ghost btn-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button></td></tr>
+            <tr><td class="mono">NF-2026-00471</td><td>Dell Technologies</td><td>2 SKUs · 5 un.</td><td class="num">R$ 56.700,00</td><td class="mono muted">22/04/2026</td><td><span class="st st-em-uso">Aguardando</span></td><td><button class="btn btn-ghost btn-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button></td></tr>
+            <tr><td class="mono">NF-2026-00465</td><td>Mitutoyo</td><td>4 SKUs · 18 un.</td><td class="num">R$ 12.340,00</td><td class="mono muted">19/04/2026</td><td><span class="st st-devolvido">Conferido</span></td><td><button class="btn btn-ghost btn-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button></td></tr>
+            <tr><td class="mono">NF-2026-00461</td><td>Vonder Ferramentas</td><td>8 SKUs · 60 un.</td><td class="num">R$ 4.890,00</td><td class="mono muted">15/04/2026</td><td><span class="st st-atrasado">Divergência</span></td><td><button class="btn btn-ghost btn-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- VIEW: HISTORY -->
+    <section data-view="history" data-screen-label="Admin · Histórico" style="display:none">
+      <div class="page-header">
+        <div>
+          <span class="eyebrow">Operações</span>
+          <h1 class="page-title">Histórico de retiradas</h1>
+          <p class="page-subtitle">Auditoria completa com filtros avançados.</p>
+        </div>
+        <button class="btn btn-primary">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+          Exportar período
+        </button>
+      </div>
+
+      <div class="toolbar">
+        <input class="input" placeholder="Buscar usuário, produto, ID..." id="hist-search" />
+        <input class="input" type="date" value="2026-04-08" style="max-width: 150px" />
+        <span class="muted" style="font-size:12px">até</span>
+        <input class="input" type="date" value="2026-05-08" style="max-width: 150px" />
+        <select class="select" style="width:auto">
+          <option>Todos status</option><option>Em uso</option><option>Atrasado</option><option>Devolvido</option>
+        </select>
+        <div class="spacer"></div>
+        <span class="muted" style="font-size:12px" id="hist-count"></span>
+      </div>
+
+      <div class="data-table">
+        <table class="table" id="hist-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Quando</th>
+              <th>Usuário</th>
+              <th>Equipamento</th>
+              <th>Qtd</th>
+              <th>Motivo</th>
+              <th>Setor</th>
+              <th>Supervisor</th>
+              <th>Status</th>
+              <th>Devolução</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- VIEW: REPORTS -->
+    <section data-view="reports" data-screen-label="Admin · Relatórios" style="display:none">
+      <div class="page-header">
+        <div>
+          <span class="eyebrow">Operações</span>
+          <h1 class="page-title">Relatórios exportáveis</h1>
+          <p class="page-subtitle">Modelos prontos. Personalize o período e exporte em PDF, CSV ou Excel.</p>
+        </div>
+      </div>
+      <div class="reports-grid">
+        <div class="report-card">
+          <div class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 3 5-7"/></svg></div>
+          <h3>Volume de retiradas</h3>
+          <p>Quantitativo diário, semanal e mensal por categoria, setor e usuário.</p>
+        </div>
+        <div class="report-card">
+          <div class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>
+          <h3>Inventário consolidado</h3>
+          <p>Posição atual de estoque, valor em circulação e SKUs em alerta.</p>
+        </div>
+        <div class="report-card">
+          <div class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg></div>
+          <h3>Devoluções em atraso</h3>
+          <p>Lista detalhada com responsáveis, dias de atraso e valor envolvido.</p>
+        </div>
+        <div class="report-card">
+          <div class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div>
+          <h3>Por funcionário</h3>
+          <p>Histórico individual de cada usuário com motivos, frequência e atrasos.</p>
+        </div>
+        <div class="report-card">
+          <div class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
+          <h3>Tempo médio de uso</h3>
+          <p>Duração das retiradas por SKU, categoria e centro de custo.</p>
+        </div>
+        <div class="report-card">
+          <div class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+          <h3>Custo operacional</h3>
+          <p>Valor financeiro consolidado, depreciação e investimento por área.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW: SETTINGS -->
+    <section data-view="settings" data-screen-label="Admin · Configurações" style="display:none">
+      <div class="page-header">
+        <div>
+          <span class="eyebrow">Sistema</span>
+          <h1 class="page-title">Configurações</h1>
+          <p class="page-subtitle">Personalize o comportamento do InventiTrack para sua operação.</p>
+        </div>
+      </div>
+      <div class="settings-grid">
+        <div class="settings-card">
+          <h3>Identificação</h3>
+          <p>Como os usuários se autenticam no terminal.</p>
+          <div class="switch-row">
+            <div><div class="lab">Crachá RFID/NFC</div><div class="sub">Leitura por aproximação 13.56MHz</div></div>
+            <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+          </div>
+          <div class="switch-row">
+            <div><div class="lab">Biometria (digital)</div><div class="sub">Como fallback do crachá</div></div>
+            <div class="toggle" onclick="this.classList.toggle('on')"></div>
+          </div>
+          <div class="switch-row">
+            <div><div class="lab">PIN pessoal</div><div class="sub">Para emergências</div></div>
+            <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+          </div>
+        </div>
+        <div class="settings-card">
+          <h3>Retirada</h3>
+          <p>Regras aplicadas no fluxo de saída.</p>
+          <div class="switch-row">
+            <div><div class="lab">Foto obrigatória</div><div class="sub">Item fotografado antes de sair</div></div>
+            <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+          </div>
+          <div class="switch-row">
+            <div><div class="lab">Assinatura digital obrigatória</div><div class="sub">Termo de responsabilidade</div></div>
+            <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+          </div>
+          <div class="switch-row">
+            <div><div class="lab">Aprovação do supervisor</div><div class="sub">Apenas itens acima de R$ 1.000</div></div>
+            <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+          </div>
+        </div>
+        <div class="settings-card">
+          <h3>Notificações</h3>
+          <p>Alertas automáticos para gestores.</p>
+          <div class="switch-row">
+            <div><div class="lab">Estoque crítico</div><div class="sub">Quando SKU fica abaixo do mínimo</div></div>
+            <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+          </div>
+          <div class="switch-row">
+            <div><div class="lab">Devolução em atraso</div><div class="sub">Após 24h do prazo previsto</div></div>
+            <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+          </div>
+          <div class="switch-row">
+            <div><div class="lab">Resumo diário</div><div class="sub">Email às 18:00 com KPIs do dia</div></div>
+            <div class="toggle" onclick="this.classList.toggle('on')"></div>
+          </div>
+        </div>
+        <div class="settings-card">
+          <h3>Integrações</h3>
+          <p>Conexões com sistemas externos.</p>
+          <div class="switch-row">
+            <div><div class="lab">SAP / ERP</div><div class="sub">Sincronização de SKUs e custos</div></div>
+            <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+          </div>
+          <div class="switch-row">
+            <div><div class="lab">SSO Active Directory</div><div class="sub">Cadastro automático de funcionários</div></div>
+            <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+          </div>
+          <div class="switch-row">
+            <div><div class="lab">Webhook personalizado</div><div class="sub">Para BI ou Slack</div></div>
+            <div class="toggle" onclick="this.classList.toggle('on')"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW: PERMISSIONS -->
+    <section data-view="permissions" data-screen-label="Admin · Permissões" style="display:none">
+      <div class="page-header">
+        <div>
+          <span class="eyebrow">Sistema</span>
+          <h1 class="page-title">Papéis & permissões</h1>
+          <p class="page-subtitle">Defina o que cada tipo de usuário pode fazer.</p>
+        </div>
+      </div>
+
+      <div class="data-table">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Papel</th><th>Retirar</th><th>Aprovar</th><th>Cadastrar</th><th>Relatórios</th><th>Admin</th><th>Usuários</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="role-tag" style="background:var(--accent-soft); color:var(--accent); border-color:transparent">Administrador</span></td>
+              <td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td class="num">3</td>
+            </tr>
+            <tr>
+              <td><span class="role-tag">Supervisor</span></td>
+              <td>✓</td><td>✓</td><td>—</td><td>✓</td><td>—</td><td class="num">8</td>
+            </tr>
+            <tr>
+              <td><span class="role-tag">Almoxarife</span></td>
+              <td>✓</td><td>—</td><td>✓</td><td>parcial</td><td>—</td><td class="num">4</td>
+            </tr>
+            <tr>
+              <td><span class="role-tag">Operador</span></td>
+              <td>✓</td><td>—</td><td>—</td><td>—</td><td>—</td><td class="num">42</td>
+            </tr>
+            <tr>
+              <td><span class="role-tag">Convidado</span></td>
+              <td>parcial</td><td>—</td><td>—</td><td>—</td><td>—</td><td class="num">5</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- DRAWER: NEW PRODUCT -->
+<div class="drawer-bg" id="drawer-bg" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-head">
+    <h2 id="drawer-title">Novo produto</h2>
+    <button class="btn btn-ghost btn-icon" onclick="closeDrawer()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
+  </div>
+  <div class="drawer-body">
+    <div class="form-row">
+      <div class="full"><label class="label">Nome do produto</label><input class="input" placeholder="Ex: Capacete de Segurança Classe B" /></div>
+      <div><label class="label">SKU</label><input class="input" placeholder="EPI-CAP-01" /></div>
+      <div><label class="label">Código de barras</label><input class="input" placeholder="789..." /></div>
+      <div class="full"><label class="label">Categoria</label><select class="select" id="drawer-cat"></select></div>
+      <div><label class="label">Estoque inicial</label><input class="input" type="number" value="0" /></div>
+      <div><label class="label">Estoque mínimo</label><input class="input" type="number" value="5" /></div>
+      <div><label class="label">Localização</label><input class="input" placeholder="A-12-3" /></div>
+      <div><label class="label">Custo unitário</label><input class="input" type="number" placeholder="0,00" step="0.01" /></div>
+      <div class="full"><label class="label">Descrição</label><textarea class="textarea" rows="3"></textarea></div>
+    </div>
+  </div>
+  <div class="drawer-foot">
+    <button class="btn" onclick="closeDrawer()">Cancelar</button>
+    <button class="btn btn-primary" onclick="closeDrawer()">Salvar produto</button>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script src="nav.js"></script>
+<script>
+  document.getElementById('nav-mount').innerHTML = IT_renderNav('admin');
+
+  document.getElementById('c-products').textContent = IT.PRODUCTS.length;
+  document.getElementById('c-users').textContent = IT.USERS.length;
+  document.getElementById('c-cats').textContent = IT.CATEGORIES.length + IT.SECTORS.length;
+
+  // Sidebar nav
+  document.querySelectorAll('.side-link').forEach(link => {
+    link.addEventListener('click', () => {
+      const view = link.dataset.view;
+      document.querySelectorAll('.side-link').forEach(l => l.classList.remove('active'));
+      link.classList.add('active');
+      document.querySelectorAll('section[data-view]').forEach(s => {
+        s.style.display = s.dataset.view === view ? 'block' : 'none';
+      });
+    });
+  });
+
+  // ---- PRODUCTS ----
+  const prodSearch = document.getElementById('prod-search');
+  const prodCat = document.getElementById('prod-cat');
+  const prodStock = document.getElementById('prod-stock');
+  prodCat.innerHTML = '<option value="">Todas categorias</option>' + IT.CATEGORIES.map(c => `<option value="${c.id}">${c.icon} ${c.name}</option>`).join('');
+  document.getElementById('drawer-cat').innerHTML = IT.CATEGORIES.map(c => `<option value="${c.id}">${c.icon} ${c.name}</option>`).join('');
+
+  function renderProducts() {
+    const q = (prodSearch.value || '').toLowerCase();
+    const cat = prodCat.value;
+    const sf = prodStock.value;
+    const items = IT.PRODUCTS.filter(p => {
+      if (q && !(p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q))) return false;
+      if (cat && p.cat !== cat) return false;
+      if (sf === 'ok' && p.stock < p.min) return false;
+      if (sf === 'low' && p.stock >= p.min) return false;
+      if (sf === 'crit' && p.stock > 2) return false;
+      return true;
+    });
+    const tbody = document.querySelector('#prod-table tbody');
+    tbody.innerHTML = items.map(p => {
+      const cat = IT.categoryById(p.cat);
+      const stockClass = p.stock <= 2 ? 'crit' : (p.stock < p.min ? 'low' : '');
+      const fillW = Math.min(100, (p.stock / Math.max(p.min*2, 1)) * 100);
+      return `
+        <tr>
+          <td><span class="mono muted">${p.sku}</span></td>
+          <td><div style="font-weight:500">${cat.icon} ${p.name}</div><div class="muted" style="font-size:11px">${p.id}</div></td>
+          <td><span class="role-tag">${cat.name}</span></td>
+          <td>
+            <div style="display:flex; gap:8px; align-items:center">
+              <span class="num" style="min-width:30px; text-align:right; font-weight:500">${p.stock}</span>
+              <div class="stock-bar ${stockClass}"><div class="fill" style="width:${fillW}%"></div></div>
+            </div>
+          </td>
+          <td class="num muted">${p.min}</td>
+          <td><span class="mono">${p.location}</span></td>
+          <td class="num">${IT.fmtBRL(p.price)}</td>
+          <td class="muted mono">${IT.fmtDate(p.lastIn)}</td>
+          <td>
+            <div class="row-actions">
+              <button class="btn btn-ghost btn-icon" title="Editar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+              <button class="btn btn-ghost btn-icon" title="Mais"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+  [prodSearch, prodCat, prodStock].forEach(el => el.addEventListener('input', renderProducts));
+  renderProducts();
+
+  // ---- USERS ----
+  const userSearch = document.getElementById('user-search');
+  function renderUsers() {
+    const q = (userSearch.value || '').toLowerCase();
+    const userCounts = {};
+    IT.WITHDRAWALS.forEach(w => userCounts[w.userId] = (userCounts[w.userId] || 0) + 1);
+    const items = IT.USERS.filter(u =>
+      !q || u.name.toLowerCase().includes(q) || u.badge.toLowerCase().includes(q) || u.role.toLowerCase().includes(q)
+    );
+    document.querySelector('#user-table tbody').innerHTML = items.map(u => `
+      <tr>
+        <td>
+          <div style="display:flex; gap:10px; align-items:center">
+            <div class="avatar">${IT.initials(u.name)}</div>
+            <div>
+              <div style="font-weight:500">${u.name}</div>
+              <div class="muted" style="font-size:11px">${u.id}</div>
+            </div>
+          </div>
+        </td>
+        <td><span class="mono">${u.badge}</span></td>
+        <td>${u.role}</td>
+        <td>${IT.sectorById(u.sector).name}</td>
+        <td>${u.shift}</td>
+        <td>${u.active ? '<span class="st st-devolvido">Ativo</span>' : '<span class="st st-atrasado">Inativo</span>'}</td>
+        <td class="num">${userCounts[u.id] || 0}</td>
+        <td>
+          <div class="row-actions">
+            <button class="btn btn-ghost btn-icon" title="Editar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  }
+  userSearch.addEventListener('input', renderUsers);
+  renderUsers();
+
+  // ---- CATEGORIES & SECTORS ----
+  document.getElementById('cat-list').innerHTML = IT.CATEGORIES.map(c => {
+    const count = IT.PRODUCTS.filter(p => p.cat === c.id).length;
+    return `
+      <div class="switch-row">
+        <div style="display:flex; gap:10px; align-items:center">
+          <div style="width:32px; height:32px; border-radius:8px; background:var(--surface-2); display:grid; place-items:center; font-size:16px">${c.icon}</div>
+          <div><div class="lab">${c.name}</div><div class="sub">${count} produtos</div></div>
+        </div>
+        <button class="btn btn-ghost btn-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+      </div>
+    `;
+  }).join('');
+  document.getElementById('sec-list').innerHTML = IT.SECTORS.map(s => {
+    const count = IT.USERS.filter(u => u.sector === s.id).length;
+    return `
+      <div class="switch-row">
+        <div style="display:flex; gap:10px; align-items:center">
+          <div style="width:32px; height:32px; border-radius:8px; background:${s.color}22; display:grid; place-items:center"><div style="width:10px; height:10px; border-radius:50%; background:${s.color}"></div></div>
+          <div><div class="lab">${s.name}</div><div class="sub">${count} pessoas</div></div>
+        </div>
+        <button class="btn btn-ghost btn-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+      </div>
+    `;
+  }).join('');
+
+  // ---- HISTORY ----
+  const histSearch = document.getElementById('hist-search');
+  function renderHistory() {
+    const q = (histSearch.value || '').toLowerCase();
+    const items = IT.WITHDRAWALS.filter(w =>
+      !q || w.userName.toLowerCase().includes(q) || w.productName.toLowerCase().includes(q) || w.id.toLowerCase().includes(q)
+    ).slice(0, 60);
+    document.getElementById('hist-count').textContent = items.length + ' resultados (mostrando ' + Math.min(60, items.length) + ')';
+    document.querySelector('#hist-table tbody').innerHTML = items.map(w => `
+      <tr>
+        <td><span class="mono">${w.id}</span></td>
+        <td class="mono muted">${IT.fmtDateTime(w.ts)}</td>
+        <td>
+          <div style="display:flex; gap:8px; align-items:center">
+            <div class="avatar">${IT.initials(w.userName)}</div>
+            <div>
+              <div style="font-weight:500">${w.userName.split(' ').slice(0,2).join(' ')}</div>
+              <div class="muted" style="font-size:11px">${w.userBadge}</div>
+            </div>
+          </div>
+        </td>
+        <td>${w.productName}<div class="muted" style="font-size:11px">${w.productSku}</div></td>
+        <td class="num">${w.qty}</td>
+        <td>${w.reason}</td>
+        <td>${IT.sectorById(w.sector).name}</td>
+        <td class="muted" style="font-size:12px">${w.supervisorName.split(' ').slice(0,2).join(' ')}</td>
+        <td><span class="st st-${w.status}">${w.status === 'em-uso' ? 'Em uso' : (w.status === 'atrasado' ? 'Atrasado' : 'Devolvido')}</span></td>
+        <td class="muted mono" style="font-size:12px">${IT.fmtDate(w.expectedReturn)}</td>
+      </tr>
+    `).join('');
+  }
+  histSearch.addEventListener('input', renderHistory);
+  renderHistory();
+
+  // ---- DRAWER ----
+  function openProductDrawer() {
+    document.getElementById('drawer').classList.add('open');
+    document.getElementById('drawer-bg').classList.add('open');
+  }
+  function closeDrawer() {
+    document.getElementById('drawer').classList.remove('open');
+    document.getElementById('drawer-bg').classList.remove('open');
+  }
+  window.openProductDrawer = openProductDrawer;
+  window.closeDrawer = closeDrawer;
+  renderProducts(); // ou render()
+</script>
+
+</body>
+</html>
