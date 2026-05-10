@@ -1,11 +1,20 @@
 package com.inventitrack.controller;
 
-import com.inventitrack.model.*;
-import com.inventitrack.repository.BaseRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.UUID;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.inventitrack.model.Produto;
+import com.inventitrack.model.Retirada;
+import com.inventitrack.model.Usuario;
+import com.inventitrack.repository.BaseRepository;
 
 @RestController
 @RequestMapping("/api")
@@ -16,7 +25,9 @@ public class ApiController {
     private BaseRepository repo;
 
     @GetMapping("/produtos")
-    public List<Produto> getProdutos() throws Exception { return repo.listar("produtos", Produto.class); }
+    public List<Produto> getProdutos() throws Exception { 
+        return repo.listar("produtos", Produto.class); 
+    }
 
     @PostMapping("/produtos")
     public String saveProduto(@RequestBody Produto p) throws Exception { 
@@ -25,7 +36,9 @@ public class ApiController {
     }
 
     @GetMapping("/usuarios")
-    public List<Usuario> getUsuarios() throws Exception { return repo.listar("usuarios", Usuario.class); }
+    public List<Usuario> getUsuarios() throws Exception { 
+        return repo.listar("usuarios", Usuario.class); 
+    }
 
     @PostMapping("/usuarios")
     public String saveUsuario(@RequestBody Usuario u) throws Exception { 
@@ -34,7 +47,9 @@ public class ApiController {
     }
 
     @GetMapping("/retiradas")
-    public List<Retirada> getRetiradas() throws Exception { return repo.listar("retiradas", Retirada.class); }
+    public List<Retirada> getRetiradas() throws Exception { 
+        return repo.listar("retiradas", Retirada.class); 
+    }
 
     @PostMapping("/retiradas")
     public String saveRetirada(@RequestBody Retirada r) throws Exception { 
