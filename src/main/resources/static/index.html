@@ -152,29 +152,6 @@
     line-height: 1.55;
     margin: 0 0 24px;
   }
-  .mode-card .features {
-    margin-top: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 7px;
-    padding-top: 18px;
-    border-top: 1px solid var(--border);
-  }
-  .mode-card .features li {
-    list-style: none;
-    font-size: 12px;
-    color: var(--text-2);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 0;
-  }
-  .mode-card .features li::before {
-    content: "";
-    width: 4px; height: 4px; border-radius: 50%;
-    background: var(--muted-2);
-    flex-shrink: 0;
-  }
   .mode-card .badge {
     position: absolute;
     top: 24px; right: 24px;
@@ -186,23 +163,6 @@
     color: var(--muted);
     border: 1px solid var(--border);
   }
-  .mode-card .arrow {
-    position: absolute;
-    top: 24px; right: 24px;
-    width: 32px; height: 32px;
-    display: grid; place-items: center;
-    border-radius: 50%;
-    background: var(--surface-2);
-    color: var(--muted);
-    transition: all 0.2s var(--ease);
-    opacity: 0;
-  }
-  .mode-card:hover .arrow {
-    opacity: 1;
-    transform: translateX(0);
-    background: var(--accent);
-    color: #fff;
-  }
   .mode-card .icon {
     width: 56px; height: 56px;
     border-radius: var(--radius-md);
@@ -211,7 +171,6 @@
     color: var(--text);
     margin-bottom: 20px;
   }
-  /* Variant treatments per card */
   .mode-card.kiosk .icon { background: var(--accent-soft); color: var(--accent); }
   .mode-card.dash .icon { background: var(--pink-soft); color: var(--accent-2); }
   .mode-card.admin .icon { background: rgba(74,141,224,0.1); color: var(--info); }
@@ -232,73 +191,34 @@
     background: var(--info);
   }
 
-  /* Recent activity strip */
-  .activity {
-    max-width: 1280px;
-    margin: 0 auto;
-    padding: 0 32px 80px;
+  /* OVERLAY DE LOGIN */
+  .login-overlay {
+    position: fixed; inset: 0;
+    background: rgba(14,16,18,0.85);
+    backdrop-filter: blur(10px);
+    z-index: 1000;
+    display: none;
+    place-items: center;
+    animation: fadeIn 0.2s var(--ease);
   }
-  .activity-grid {
-    display: grid;
-    grid-template-columns: 1.4fr 1fr;
-    gap: 14px;
-  }
-  .activity-card {
+  .login-overlay.show { display: grid; }
+  .login-card {
+    width: min(400px, 90vw);
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-    overflow: hidden;
+    border-radius: var(--radius-xl);
+    padding: 36px;
+    box-shadow: var(--shadow-lg);
+    animation: pop 0.3s var(--ease);
   }
-  .activity-card-head {
-    padding: 14px 18px;
-    border-bottom: 1px solid var(--border);
-    display: flex; justify-content: space-between; align-items: center;
-  }
-  .activity-card-head h3 { font-size: 13px; font-weight: 600; margin: 0; }
-  .activity-list { padding: 6px 0; }
-  .activity-row {
-    padding: 10px 18px;
-    display: grid;
-    grid-template-columns: 28px 1fr auto;
-    gap: 12px;
-    align-items: center;
-    font-size: 13px;
-  }
-  .activity-row + .activity-row { border-top: 1px solid var(--border); }
-  .activity-row .name { font-weight: 500; }
-  .activity-row .meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
-  .activity-row .when {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    color: var(--muted);
-    text-align: right;
-  }
-
-  .alerts-list { padding: 6px 0; }
-  .alert-row {
-    padding: 12px 18px;
-    display: flex;
-    gap: 12px;
-    align-items: flex-start;
-    font-size: 13px;
-  }
-  .alert-row + .alert-row { border-top: 1px solid var(--border); }
-  .alert-row .alert-icon {
-    width: 28px; height: 28px; border-radius: 50%;
-    display: grid; place-items: center;
-    flex-shrink: 0;
-  }
-  .alert-row.warn .alert-icon { background: rgba(224,160,46,0.12); color: var(--warn); }
-  .alert-row.danger .alert-icon { background: rgba(228,42,93,0.12); color: var(--danger); }
-  .alert-row .name { font-weight: 500; }
-  .alert-row .meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes pop { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
   @media (max-width: 1100px) {
     .modes-grid { grid-template-columns: 1fr; }
     .hero h1 { font-size: 44px; }
     [data-style="bold"] .hero h1 { font-size: 56px; }
     .hero-stats { grid-template-columns: repeat(2, 1fr); }
-    .activity-grid { grid-template-columns: 1fr; }
   }
 </style>
 </head>
@@ -306,7 +226,7 @@
 
 <div id="nav-mount"></div>
 
-<section class="hero" data-screen-label="Início — Hero">
+<section class="hero">
   <div class="hero-eyebrow"><span class="pulse"></span> Sistema operando · 12 unidades online</div>
   <h1>Controle de retiradas e <span class="grad">rastreio total</span> do seu inventário em movimento.</h1>
   <p>Plataforma centralizada para registro de saídas, identificação por crachá NFC e auditoria contínua de equipamentos. Três modos de acesso pensados para operação industrial 24/7.</p>
@@ -338,131 +258,263 @@
   </div>
   <div class="modes-grid">
 
-    <a class="mode-card kiosk" href="retirada.html" data-screen-label="Card Retirada">
-      <span class="badge">Totem</span>
+    <a class="mode-card kiosk" href="retirada.html">
+      <span class="badge">Totem Livre</span>
       <div class="icon">
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h18M3 12h18M3 17h12"/><circle cx="20" cy="17" r="2"/></svg>
       </div>
       <div class="mode-num">01 / Tela de Retirada</div>
       <h3>Retirada<br/>Express</h3>
       <p class="desc">Interface dedicada de balcão. Aproxime o crachá, selecione o equipamento, registre o motivo. Otimizado para uso contínuo o dia inteiro.</p>
-      <ul class="features">
-        <li>Leitura de crachá RFID/NFC em &lt;1s</li>
-        <li>Botões grandes, foco em produtividade</li>
-        <li>Modo offline com sincronização posterior</li>
-      </ul>
     </a>
 
-    <a class="mode-card dash" href="dashboard.html" data-screen-label="Card Dashboard">
-      <span class="badge">Tempo real</span>
+    <a class="mode-card dash" href="#" onclick="window.abrirLogin('dashboard.html'); return false;">
+      <span class="badge" style="color: var(--danger); border-color: var(--danger);">🔒 Restrito</span>
       <div class="icon">
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 3 5-7"/></svg>
       </div>
       <div class="mode-num">02 / Dashboard</div>
       <h3>Painel de<br/>Controle</h3>
       <p class="desc">Visão executiva com KPIs, gráficos de fluxo, mapa de calor por horário e alertas de estoque. Pensado para supervisores e gestores.</p>
-      <ul class="features">
-        <li>Top equipamentos e top usuários</li>
-        <li>Mapa de calor de retiradas</li>
-        <li>Alertas de devolução em atraso</li>
-      </ul>
     </a>
 
-    <a class="mode-card admin" href="admin.html" data-screen-label="Card Admin">
-      <span class="badge">Acesso restrito</span>
+    <a class="mode-card admin" href="#" onclick="window.abrirLogin('admin.html'); return false;">
+      <span class="badge" style="color: var(--danger); border-color: var(--danger);">🔒 Restrito</span>
       <div class="icon">
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
       </div>
       <div class="mode-num">03 / Administração</div>
       <h3>Cadastros<br/>& Estoque</h3>
       <p class="desc">CRUDs de produtos, usuários, setores e categorias. Entrada de notas, relatórios exportáveis, permissões e configurações do sistema.</p>
-      <ul class="features">
-        <li>Catálogo completo de SKUs</li>
-        <li>Usuários, papéis e permissões</li>
-        <li>Histórico filtrável e exportável</li>
-      </ul>
     </a>
 
   </div>
 </section>
 
-<section class="activity">
-  <div class="activity-grid">
-    <div class="activity-card">
-      <div class="activity-card-head">
-        <h3>Atividade em tempo real</h3>
-        <a href="dashboard.html" class="muted" style="font-size:12px">ver tudo →</a>
-      </div>
-      <div class="activity-list" id="recent-list"></div>
+<div class="login-overlay" id="login-overlay">
+  <div class="login-card">
+    <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom: 24px;">
+      <h2 id="modal-title" style="font-size: 24px; font-weight: 600; margin: 0;">Autenticação</h2>
+      <button class="btn-ghost btn-icon" onclick="window.fecharLogin()" style="font-size: 20px;">✕</button>
     </div>
-    <div class="activity-card">
-      <div class="activity-card-head">
-        <h3>Alertas operacionais</h3>
-        <span class="tag tag-warn">5 ativos</span>
+    
+    <div id="view-login">
+      <div style="margin-bottom: 24px;">
+        <label class="label">E-mail Corporativo</label>
+        <input type="email" id="login-email" class="input" placeholder="seu.email@inventitrack.com">
       </div>
-      <div class="alerts-list" id="alerts-list"></div>
+      
+      <div style="margin-bottom: 12px;">
+        <label class="label">Senha de Acesso</label>
+        <input type="password" id="login-senha" class="input" placeholder="••••••••">
+      </div>
+
+      <p id="login-error" style="color: var(--danger); font-size: 13px; display: none; margin-bottom: 12px;">❌ Credenciais incorretas ou conta não existe.</p>
+
+      <button class="btn btn-primary" style="width: 100%; padding: 14px; font-size: 15px; margin-top: 12px;" onclick="window.fazerLogin()">
+        Entrar no Sistema
+      </button>
+
+      <div style="display: flex; align-items: center; gap: 12px; margin: 20px 0;">
+        <div style="flex: 1; height: 1px; background: var(--border);"></div>
+        <span style="font-size: 12px; color: var(--muted);">OU</span>
+        <div style="flex: 1; height: 1px; background: var(--border);"></div>
+      </div>
+
+      <button class="btn btn-ghost" style="width: 100%; padding: 14px; font-size: 14px; border: 1px solid var(--border);" onclick="window.loginGoogle()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 8px;"><path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+        Continuar com o Google
+      </button>
+
+      <p style="text-align: center; margin-top: 24px; font-size: 13px; color: var(--muted);">
+        Não possui acesso? <a href="#" onclick="window.toggleView('register')" style="color: var(--accent); font-weight: 600;">Cadastre-se agora</a>
+      </p>
     </div>
+
+    <div id="view-register" style="display: none;">
+      <div style="margin-bottom: 16px;">
+        <label class="label">Nome Completo</label>
+        <input type="text" id="reg-nome" class="input" placeholder="Seu nome">
+      </div>
+      <div style="margin-bottom: 16px;">
+        <label class="label">E-mail Corporativo</label>
+        <input type="email" id="reg-email" class="input" placeholder="seu.nome@inventitrack.com">
+      </div>
+      <div style="margin-bottom: 16px;">
+        <label class="label">Crie uma Senha</label>
+        <input type="password" id="reg-senha" class="input" placeholder="No mínimo 6 caracteres">
+      </div>
+      <div style="margin-bottom: 16px;">
+        <label class="label">Setor</label>
+        <select class="select" id="reg-setor">
+          <option value="ti">TI</option>
+          <option value="mfg">Manufatura</option>
+          <option value="mnt">Manutenção</option>
+          <option value="log">Logística</option>
+        </select>
+      </div>
+
+      <button class="btn btn-primary" style="width: 100%; padding: 14px; font-size: 15px; margin-top: 12px;" onclick="window.enviarCadastro()">
+        Criar Conta
+      </button>
+
+      <p style="text-align: center; margin-top: 24px; font-size: 13px; color: var(--muted);">
+        Já tem uma conta? <a href="#" onclick="window.toggleView('login')" style="color: var(--accent); font-weight: 600;">Voltar ao Login</a>
+      </p>
+    </div>
+
   </div>
-</section>
+</div>
 
 <script src="data.js"></script>
 <script src="nav.js"></script>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
+  import { getAuth, signInWithPopup, GoogleAuthProvider, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
+
+  // ⚠️ COLE A SUA CHAVE CORRETA (QUE COMEÇA COM AIzaSy...) AQUI!
+  const firebaseConfig = {
+    apiKey: "AIzaSyAfca1WCBmEQ3MNSa3GyKEUJ_xFQY6l3KQ",
+    authDomain: "inventitrack.firebaseapp.com",
+    projectId: "inventitrack",
+    storageBucket: "inventitrack.firebasestorage.app",
+    messagingSenderId: "324794474324",
+    appId: "1:324794474324:web:936ad5013516651a0332c1"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const provider = new GoogleAuthProvider();
+
+  // Função REAL do Google Sign-In
+  window.loginGoogle = function() {
+      signInWithPopup(auth, provider)
+        .then((result) => {
+          sessionStorage.setItem('it_admin_logado', 'true');
+          window.location.href = window.urlDestino || 'dashboard.html';
+        }).catch((error) => {
+          alert("Ocorreu um erro ao tentar logar com o Google: " + error.message);
+        });
+  };
+
+  // Função REAL de Login com E-mail e Senha
+  window.fazerLogin = function() {
+    const email = document.getElementById('login-email').value;
+    const senha = document.getElementById('login-senha').value;
+    
+    if(!email || !senha) return;
+
+    signInWithEmailAndPassword(auth, email, senha)
+        .then((userCredential) => {
+            sessionStorage.setItem('it_admin_logado', 'true');
+            window.location.href = window.urlDestino || 'dashboard.html'; 
+        })
+        .catch((error) => {
+            console.error(error);
+            document.getElementById('login-error').style.display = 'block';
+        });
+  };
+
+  // Função REAL de Cadastro (Cria a senha no Auth e salva o perfil no Firestore)
+  window.enviarCadastro = async function() {
+    const nome = document.getElementById('reg-nome').value;
+    const email = document.getElementById('reg-email').value;
+    const senha = document.getElementById('reg-senha').value;
+    const setor = document.getElementById('reg-setor').value;
+
+    if(!nome || !email || !senha) {
+        alert("Por favor, preencha todos os campos.");
+        return;
+    }
+
+    try {
+        // 1. Cria a conta no Firebase Authentication (Permite o Login)
+        const userCredential = await createUserWithEmailAndPassword(auth, email, senha);
+        
+        // 2. Salva o Perfil no Firestore (Gera o crachá automático)
+        const novoUsuario = {
+            id: userCredential.user.uid,
+            name: nome,
+            badge: "NFC-" + Math.floor(Math.random() * 9999),
+            role: "Administrador", // Dando cargo de admin para ele acessar as telas bloqueadas
+            sector: setor,
+            shift: "Comercial",
+            active: true 
+        };
+
+        // Chama sua API Spring Boot para salvar no banco
+        await window.IT_SalvarUsuario(novoUsuario);
+
+        alert(`Sucesso, ${nome}! Sua conta foi criada. Use sua senha para logar nas telas restritas ou seu crachá ${novoUsuario.badge} no Totem Livre.`);
+        
+        // Limpa os campos e vai pra tela de login
+        document.getElementById('reg-nome').value = '';
+        document.getElementById('reg-email').value = '';
+        document.getElementById('reg-senha').value = '';
+        window.toggleView('login'); 
+
+    } catch (error) {
+        console.error("Erro no cadastro:", error);
+        // Tratamento amigável se a senha for muito curta ou e-mail já existir
+        if(error.code === 'auth/weak-password') alert("A senha deve ter pelo menos 6 caracteres.");
+        else if(error.code === 'auth/email-already-in-use') alert("Este e-mail já está cadastrado.");
+        else alert("Erro ao criar conta: " + error.message);
+    }
+  };
+
+  // Permite logar apertando "Enter" no teclado
+  document.getElementById('login-senha').addEventListener('keypress', function (e) {
+    if (e.key === 'Enter') window.fazerLogin();
+  });
+</script>
+
 <script>
+  // Inicialização visual e Navegação
   document.getElementById('nav-mount').innerHTML = IT_renderNav('index');
 
-  // Hero stats
-  const now = new Date('2026-05-08T18:30:00');
-  const weekAgo = new Date(now); weekAgo.setDate(weekAgo.getDate() - 7);
-  const week = IT.WITHDRAWALS.filter(w => new Date(w.ts) >= weekAgo);
-  const active = IT.WITHDRAWALS.filter(w => w.status === 'em-uso').length;
-  const overdue = IT.WITHDRAWALS.filter(w => w.status === 'atrasado').length;
-  const lowStock = IT.PRODUCTS.filter(p => p.stock < p.min).length;
+  window.urlDestino = '';
 
-  document.getElementById('stat-week').firstChild.textContent = week.length.toLocaleString('pt-BR');
-  document.getElementById('stat-active').textContent = active.toLocaleString('pt-BR');
-  document.getElementById('stat-overdue').firstChild.textContent = overdue.toLocaleString('pt-BR');
-  document.getElementById('stat-overdue-d').textContent = '+' + Math.floor(overdue * 0.18) + ' vs semana';
-  document.getElementById('stat-stock').textContent = lowStock.toLocaleString('pt-BR');
+  window.abrirLogin = function(url) {
+    if(sessionStorage.getItem('it_admin_logado') === 'true') {
+        window.location.href = url;
+        return;
+    }
+    window.urlDestino = url;
+    window.toggleView('login');
+    document.getElementById('login-overlay').classList.add('show');
+  };
 
-  // Recent activity
-  const recent = IT.WITHDRAWALS.slice(0, 6);
-  document.getElementById('recent-list').innerHTML = recent.map(w => `
-    <div class="activity-row">
-      <div class="avatar">${IT.initials(w.userName)}</div>
-      <div>
-        <div class="name">${w.userName} <span class="muted" style="font-weight:400">retirou</span> ${w.qty}× ${w.productName}</div>
-        <div class="meta">${IT.sectorById(w.sector).name} · ${w.reason} · #${w.id}</div>
-      </div>
-      <div class="when">${IT.fmtRel(w.ts)}</div>
-    </div>
-  `).join('');
+  window.fecharLogin = function() {
+    document.getElementById('login-overlay').classList.remove('show');
+    document.getElementById('login-error').style.display = 'none';
+    document.getElementById('login-email').value = '';
+    document.getElementById('login-senha').value = '';
+  };
 
-  // Alerts
-  const alerts = [];
-  IT.PRODUCTS.filter(p => p.stock < p.min).slice(0, 3).forEach(p => {
-    alerts.push({ kind: p.stock <= 2 ? 'danger' : 'warn',
-      title: `Estoque crítico: ${p.name}`,
-      meta: `${p.stock} un. em estoque · mínimo ${p.min}`,
-      icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>'
-    });
+  window.toggleView = function(view) {
+    if (view === 'register') {
+      document.getElementById('view-login').style.display = 'none';
+      document.getElementById('view-register').style.display = 'block';
+      document.getElementById('modal-title').textContent = 'Criar Conta';
+    } else {
+      document.getElementById('view-register').style.display = 'none';
+      document.getElementById('view-login').style.display = 'block';
+      document.getElementById('modal-title').textContent = 'Autenticação';
+    }
+  };
+
+  // --- CARREGAMENTO DE ESTATÍSTICAS REAIS DA TELA INICIAL ---
+  window.IT_LoadData().then(() => {
+      const active = IT.WITHDRAWALS.filter(w => w.status === 'em-uso').length;
+      const overdue = IT.WITHDRAWALS.filter(w => w.status === 'atrasado').length;
+      const lowStock = IT.PRODUCTS.filter(p => p.stock < p.min).length;
+
+      document.getElementById('stat-week').firstChild.textContent = IT.WITHDRAWALS.length.toLocaleString('pt-BR');
+      document.getElementById('stat-active').textContent = active.toLocaleString('pt-BR');
+      document.getElementById('stat-overdue').firstChild.textContent = overdue.toLocaleString('pt-BR');
+      document.getElementById('stat-stock').textContent = lowStock.toLocaleString('pt-BR');
   });
-  IT.WITHDRAWALS.filter(w => w.status === 'atrasado').slice(0, 2).forEach(w => {
-    alerts.push({ kind: 'danger',
-      title: `Devolução em atraso: ${w.productName}`,
-      meta: `${w.userName} · prevista ${IT.fmtDate(w.expectedReturn)}`,
-      icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>'
-    });
-  });
-  document.getElementById('alerts-list').innerHTML = alerts.map(a => `
-    <div class="alert-row ${a.kind}">
-      <div class="alert-icon">${a.icon}</div>
-      <div style="flex:1">
-        <div class="name">${a.title}</div>
-        <div class="meta">${a.meta}</div>
-      </div>
-    </div>
-  `).join('');
-  renderProducts(); // ou render()
 </script>
 
 </body>

@@ -6,6 +6,12 @@
 <title>InventiTrack — Dashboard</title>
 <link rel="stylesheet" href="styles.css" />
 <script src="tweaks.js"></script>
+<script>
+  // BLOQUEIO DE ROTA: Se não estiver logado, chuta para o index.html imediatamente
+  if(sessionStorage.getItem('it_admin_logado') !== 'true') {
+      window.location.replace('index.html');
+  }
+</script>
 <style>
   .dash-grid {
     display: grid;

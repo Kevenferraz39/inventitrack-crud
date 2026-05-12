@@ -81,3 +81,38 @@ IT.fmtRel = iso => {
   return IT.fmtDate(iso);
 };
 IT.initials = name => (name || '').split(' ').filter(Boolean).slice(0, 2).map(s => s[0]).join('').toUpperCase() || 'U';
+
+// --- ADICIONE NO FINAL DO SEU data.js ---
+
+window.IT_SalvarProduto = async function(produto) {
+  try {
+      await fetch('/api/produtos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(produto)
+      });
+      await window.IT_LoadData(); // Recarrega os dados atualizados do banco
+  } catch (e) { console.error("Erro ao salvar produto:", e); }
+};
+
+window.IT_SalvarRetirada = async function(retirada) {
+  try {
+      await fetch('/api/retiradas', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(retirada)
+      });
+      await window.IT_LoadData(); // Recarrega as retiradas
+  } catch (e) { console.error("Erro ao salvar retirada:", e); }
+};
+
+window.IT_SalvarUsuario = async function(usuario) {
+  try {
+      await fetch('/api/usuarios', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(usuario)
+      });
+      await window.IT_LoadData(); // Recarrega os dados do banco
+  } catch (e) { console.error("Erro ao salvar usuário:", e); }
+};

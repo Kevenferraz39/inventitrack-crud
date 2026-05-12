@@ -6,6 +6,12 @@
 <title>InventiTrack — Administração</title>
 <link rel="stylesheet" href="styles.css" />
 <script src="tweaks.js"></script>
+<script>
+  // BLOQUEIO DE ROTA: Se não estiver logado, chuta para o index.html imediatamente
+  if(sessionStorage.getItem('it_admin_logado') !== 'true') {
+      window.location.replace('index.html');
+  }
+</script>
 <style>
   .admin-shell {
     display: grid;
@@ -641,7 +647,7 @@
   </div>
   <div class="drawer-foot">
     <button class="btn" onclick="closeDrawer()">Cancelar</button>
-    <button class="btn btn-primary" onclick="closeDrawer()">Salvar produto</button>
+    <button class="btn btn-primary" onclick="salvarNovoProduto()">Salvar produto</button>
   </div>
 </div>
 
@@ -649,10 +655,6 @@
 <script src="nav.js"></script>
 <script>
   document.getElementById('nav-mount').innerHTML = IT_renderNav('admin');
-
-  document.getElementById('c-products').textContent = IT.PRODUCTS.length;
-  document.getElementById('c-users').textContent = IT.USERS.length;
-  document.getElementById('c-cats').textContent = IT.CATEGORIES.length + IT.SECTORS.length;
 
   // Sidebar nav
   document.querySelectorAll('.side-link').forEach(link => {
@@ -716,7 +718,6 @@
     }).join('');
   }
   [prodSearch, prodCat, prodStock].forEach(el => el.addEventListener('input', renderProducts));
-  renderProducts();
 
   // ---- USERS ----
   const userSearch = document.getElementById('user-search');
@@ -753,7 +754,6 @@
     `).join('');
   }
   userSearch.addEventListener('input', renderUsers);
-  renderUsers();
 
   // ---- CATEGORIES & SECTORS ----
   document.getElementById('cat-list').innerHTML = IT.CATEGORIES.map(c => {
@@ -813,7 +813,6 @@
     `).join('');
   }
   histSearch.addEventListener('input', renderHistory);
-  renderHistory();
 
   // ---- DRAWER ----
   function openProductDrawer() {
@@ -826,7 +825,49 @@
   }
   window.openProductDrawer = openProductDrawer;
   window.closeDrawer = closeDrawer;
-  renderProducts(); // ou render()
+
+  // Função para salvar o Novo Produto
+  async function salvarNovoProduto() {
+    const inputs = document.querySelectorAll('.drawer-body .input');
+    const categoria = document.getElementById('drawer-cat').value;
+    
+    const novoProduto = {
+        name: inputs[0].value,
+        sku: inputs[1].value,
+        cat: categoria,
+        stock: parseInt(inputs[3].value) || 0,
+        min: parseInt(inputs[4].value) || 0,
+        location: inputs[5].value,
+        price: parseFloat(inputs[6].value.replace(',', '.')) || 0.0,
+        lastIn: new Date().toISOString().slice(0, 10)
+    };
+
+    await window.IT_SalvarProduto(novoProduto);
+    
+    inputs.forEach(i => i.value = '');
+    closeDrawer();
+    renderProducts(); 
+    alert("Produto salvo com sucesso no Firebase!");
+  }
+
+  // --- INICIALIZAÇÃO DA PÁGINA (ESPERA O JAVA) ---
+  async function inicializarAdmin() {
+      await window.IT_LoadData(); // Bate na API
+      
+      // Atualiza os painéis
+      document.getElementById('c-products').textContent = IT.PRODUCTS.length;
+      document.getElementById('c-users').textContent = IT.USERS.length;
+      document.getElementById('c-cats').textContent = IT.CATEGORIES.length + IT.SECTORS.length;
+
+      // Desenha as tabelas reais
+      renderProducts();
+      renderUsers();
+      renderHistory();
+  }
+
+  // Aciona a inicialização
+  inicializarAdmin();
+
 </script>
 
 </body>

@@ -6,6 +6,12 @@
 <title>InventiTrack — Retirada</title>
 <link rel="stylesheet" href="styles.css" />
 <script src="tweaks.js"></script>
+<script>
+  // BLOQUEIO DE ROTA: Se não estiver logado, chuta para o index.html imediatamente
+  if(sessionStorage.getItem('it_admin_logado') !== 'true') {
+      window.location.replace('index.html');
+  }
+</script>
 <style>
   body { overflow: hidden; }
 
@@ -522,7 +528,6 @@
 
 <div class="kiosk">
 
-  <!-- TOP BAR -->
   <div class="kiosk-top">
     <div style="display:flex; align-items:center; gap:24px">
       <a href="index.html" class="kiosk-back">
@@ -544,10 +549,8 @@
     </div>
   </div>
 
-  <!-- MAIN -->
   <div class="kiosk-main">
 
-    <!-- LEFT: USER + PRODUCTS -->
     <div class="pane pane-left">
       <div class="step-meta">
         <span class="step-num">Etapa 01 / 03</span>
@@ -558,7 +561,6 @@
         </div>
       </div>
 
-      <!-- STEP 1: identification -->
       <div id="step-id">
         <h1 class="step-title">Aproxime seu crachá<br/>do leitor</h1>
         <p class="step-sub">Use o crachá funcional ou cartão NFC. A leitura é automática e seu acesso é registrado.</p>
@@ -571,16 +573,23 @@
           </div>
           <div>
             <h2>Aguardando leitura RFID</h2>
-            <p>Mantenha o crachá próximo ao leitor por 1 segundo. Se a leitura falhar, use a digital ou chame um supervisor.</p>
+            <p>Mantenha o crachá próximo ao leitor por 1 segundo. Se a leitura falhar, use a digital ou digite o número abaixo.</p>
             <div class="rfid-status"><span class="dot"></span> Leitor conectado · 13.56MHz</div>
           </div>
         </div>
 
-        <div class="eyebrow">Demo · Simular leitura de crachá</div>
+        <div class="eyebrow" style="margin-top: 24px;">Esqueceu o crachá? Digite seu número:</div>
+        <div style="display: flex; gap: 10px; margin-bottom: 24px;">
+            <input type="text" id="manual-badge" class="input" placeholder="Ex: NFC-1A23" style="max-width: 200px; font-family: var(--font-mono); text-transform: uppercase;">
+            <button class="btn btn-primary" onclick="authBadgeManual()">Entrar</button>
+        </div>
+        
+        <p id="badge-error" style="color: var(--danger); font-size: 13px; display: none; margin-top: -10px;">❌ Crachá não encontrado no sistema.</p>
+
+        <div class="eyebrow" style="margin-top: 32px;">Demo Rápida · Clique para simular leitura</div>
         <div class="badge-list" id="badge-list"></div>
       </div>
 
-      <!-- STEP 2+: identified user + product picker -->
       <div id="step-pick" style="display:none">
         <h1 class="step-title">Selecione os equipamentos</h1>
         <p class="step-sub">Busque por nome ou SKU. Toque para adicionar à retirada.</p>
@@ -609,7 +618,6 @@
       </div>
     </div>
 
-    <!-- RIGHT: CART -->
     <div class="pane pane-right">
       <div class="cart-head">
         <h2>Itens da retirada</h2>
@@ -623,7 +631,7 @@
         <div>Identifique-se primeiro e<br/>adicione equipamentos aqui.</div>
       </div>
 
-      <div id="cart-content" style="display:none; flex:1; display:none; flex-direction:column; min-height:0">
+      <div id="cart-content" style="display:none; flex:1; flex-direction:column; min-height:0">
         <div class="cart-list" id="cart-list"></div>
 
         <div class="form-grid">
@@ -674,7 +682,6 @@
     </div>
   </div>
 
-  <!-- BOTTOM BAR -->
   <div class="kiosk-bottom">
     <div class="help">
       <span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg> Suporte: ramal 4040</span>
@@ -684,7 +691,6 @@
   </div>
 </div>
 
-<!-- SUCCESS OVERLAY -->
 <div class="success-overlay" id="success-overlay">
   <div class="success-card">
     <div class="success-icon">
@@ -704,7 +710,7 @@
 <script>
   // ---------- STATE ----------
   let currentUser = null;
-  let cart = []; // { product, qty }
+  let cart = []; 
   let activeCat = 'all';
   let signed = false;
   let captured = false;
@@ -719,17 +725,39 @@
   }
   tickClock(); setInterval(tickClock, 1000);
 
-  // ---------- BADGE LIST ----------
-  const badgeList = document.getElementById('badge-list');
-  badgeList.innerHTML = IT.USERS.filter(u => u.active).slice(0, 6).map(u => `
-    <button class="badge-item" onclick="authBadge('${u.badge}')">
-      <div class="avatar">${IT.initials(u.name)}</div>
-      <div class="badge-info">
-        <b>${u.name.split(' ').slice(0,2).join(' ')}</b>
-        <small>${u.badge}</small>
-      </div>
-    </button>
-  `).join('');
+  // ---------- BADGE AUTH ----------
+  function renderBadgeDemos() {
+      const badgeList = document.getElementById('badge-list');
+      badgeList.innerHTML = IT.USERS.filter(u => u.active).slice(0, 6).map(u => `
+        <button class="badge-item" onclick="authBadge('${u.badge}')">
+          <div class="avatar">${IT.initials(u.name)}</div>
+          <div class="badge-info">
+            <b>${u.name.split(' ').slice(0,2).join(' ')}</b>
+            <small>${u.badge}</small>
+          </div>
+        </button>
+      `).join('');
+  }
+
+  function authBadgeManual() {
+      const input = document.getElementById('manual-badge');
+      const errorMsg = document.getElementById('badge-error');
+      const badgeCode = input.value.trim().toUpperCase();
+      
+      if(!badgeCode) return;
+
+      const u = IT.userByBadge(badgeCode);
+      if (!u) {
+          errorMsg.style.display = 'block';
+          input.style.borderColor = 'var(--danger)';
+          setTimeout(() => { errorMsg.style.display = 'none'; input.style.borderColor = 'var(--border)'; }, 3000);
+          return;
+      }
+      
+      input.value = '';
+      errorMsg.style.display = 'none';
+      authBadge(u.badge);
+  }
 
   function authBadge(badge) {
     const u = IT.userByBadge(badge);
@@ -746,10 +774,8 @@
     document.getElementById('user-name').textContent = u.name;
     document.getElementById('user-role').textContent = u.role;
     document.getElementById('user-sector').textContent = IT.sectorById(u.sector).name;
-    document.getElementById('user-shift').textContent = u.shift;
     document.getElementById('user-badge').textContent = u.badge;
 
-    // Pre-set defaults
     document.getElementById('sector').value = u.sector;
 
     renderProducts();
@@ -856,7 +882,6 @@
   // ---------- FORM SETUP ----------
   document.getElementById('reason').innerHTML = IT.REASONS.map(r => `<option>${r}</option>`).join('');
   document.getElementById('sector').innerHTML = IT.SECTORS.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
-  document.getElementById('supervisor').innerHTML = IT.USERS.filter(u => u.role.includes('Supervisor')).map(u => `<option value="${u.id}">${u.name}</option>`).join('');
 
   // default return = +2 days
   const defReturn = new Date('2026-05-10');
@@ -887,20 +912,41 @@
     if (ok) document.getElementById('seg3').classList.add('active');
   }
 
-  function confirmWithdrawal() {
-    const id = 'W-' + (10000 + Math.floor(Math.random() * 99999));
+  async function confirmWithdrawal() {
+    const btn = document.getElementById('confirm-btn');
+    btn.disabled = true;
+    btn.innerHTML = 'Salvando...';
+
+    const expectedReturn = document.getElementById('return-date').value;
+
+    for (const item of cart) {
+        const retirada = {
+            ts: new Date().toISOString(),
+            userId: currentUser.id,
+            userName: currentUser.name,
+            productId: item.product.id,
+            productName: item.product.name,
+            qty: item.qty,
+            status: "em-uso",
+            expectedReturn: expectedReturn
+        };
+        await window.IT_SalvarRetirada(retirada);
+    }
+
     const total = cart.reduce((s,c) => s + c.qty, 0);
-    document.getElementById('suc-id').textContent = '#' + id;
+    document.getElementById('suc-id').textContent = '#REGISTRADO';
     document.getElementById('suc-time').textContent = new Date().toLocaleTimeString('pt-BR').slice(0,5);
     document.getElementById('suc-items').textContent = total + ' itens';
     document.getElementById('success-overlay').classList.add('show');
+
     setTimeout(() => {
       document.getElementById('success-overlay').classList.remove('show');
       resetFlow();
+      btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg> Confirmar retirada';
     }, 3500);
   }
   window.confirmWithdrawal = confirmWithdrawal;
-
+  
   function resetFlow() {
     currentUser = null;
     cart = [];
@@ -921,7 +967,18 @@
     document.getElementById('notes').value = '';
   }
   window.resetFlow = resetFlow;
-  renderProducts(); // ou render()
+
+  // --- INICIALIZAÇÃO DA PÁGINA (ESPERA O JAVA) ---
+  async function inicializarRetirada() {
+      await window.IT_LoadData(); // Bate na API
+      
+      // Carrega a lista de supervisores do banco
+      document.getElementById('supervisor').innerHTML = IT.USERS.filter(u => u.role && u.role.toLowerCase().includes('supervisor')).map(u => `<option value="${u.id}">${u.name}</option>`).join('');
+
+      renderBadgeDemos(); // Desenha os crachás de atalho
+  }
+
+  inicializarRetirada();
 </script>
 
 </body>

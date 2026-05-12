@@ -32,6 +32,7 @@ public class ApiController {
     @PostMapping("/produtos")
     public String saveProduto(@RequestBody Produto p) throws Exception { 
         String id = (p.getId() == null || p.getId().isEmpty()) ? UUID.randomUUID().toString() : p.getId();
+        p.setId(id);
         return repo.salvar("produtos", id, p); 
     }
 
@@ -43,6 +44,7 @@ public class ApiController {
     @PostMapping("/usuarios")
     public String saveUsuario(@RequestBody Usuario u) throws Exception { 
         String id = (u.getId() == null || u.getId().isEmpty()) ? UUID.randomUUID().toString() : u.getId();
+        u.setId(id);
         return repo.salvar("usuarios", id, u); 
     }
 
@@ -54,6 +56,7 @@ public class ApiController {
     @PostMapping("/retiradas")
     public String saveRetirada(@RequestBody Retirada r) throws Exception { 
         String id = (r.getId() == null || r.getId().isEmpty()) ? UUID.randomUUID().toString() : r.getId();
+        r.setId(id);
         return repo.salvar("retiradas", id, r); 
     }
 }
